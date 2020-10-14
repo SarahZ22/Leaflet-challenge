@@ -33,7 +33,6 @@ var baseMaps = {
 }
 
 // Initialize layer groups to use on map
-var quakeCircles = L.layerGroup();
 var quakeMarkers = L.layerGroup();
 var tectonicPlates = L.layerGroup();
 
@@ -52,7 +51,7 @@ var myMap = L.map("map", {
   });
 
 // Add layer control to map - pass map layers
-L.control.layers(baseMaps, overlays).addTo(myMap);
+L.control.layers(baseMaps, overlays, {collapsed:false}).addTo(myMap);
 
 // Link for geojson data of earthquakes and tectonic plates
 var quakeLink = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_month.geojson";
@@ -69,43 +68,44 @@ function setColors(depth){
     } else if (depth <= 70){
         return "#ff9900";
     } else if (depth <= 90){
-        return "#ff9999";
+        return "#ff3333";
     } else {
-        return "#ff4d4d";
+        return "#cc0000";
     }};
 
 // Request geojson data for USGS earthquakes - 4.5+ in the last month
 d3.json(quakeLink, function(data){
     // Loop data to get coords/magnitude
-    for (var i=0; i<data.length; i++){
-        var magnitude = data[i].properties.mag;
-        var coordinates = data[i].geometry.coordinates;
+    features=data.features
+    for (var i=0; i<features.length; i++){
+        var magnitude = features[i].properties.mag;
+        var coordinates = features[i].geometry.coordinates;
         // Create markes and add to layer
-        L.circle([coordinates[1], coordinates[0]], {
+        var markers = L.circleMarker([coordinates[1], coordinates[0]], {
             fillOpacity: 0.8,
-            fillColor: setColors(magnitude),
-            color: "purple",
-            radius: magnitude*100 //otherwise circles too small
-        })
+            fillColor: setColors(coordinates[2]),
+            color: "black",
+            weight: 0.3,
+            radius: magnitude *4
+        }).addTo(quakeMarkers);
+
         // Add popup when circle clicked
-        .bindPopup("<h2>" + features[index].properties.place + "</h2><hr><h4>" + "Magnitude Level: " + magnitude + 
-        "<br>" + new Date(features[index].properties.time) + "<br>" + 
-        "Location: [" + coords[1] + ", " + coords[1] + "]" + "</h4>").addTo(quakeMarkers); }
+        markers.bindPopup("<h2>" + features[i].properties.place + "</h2><hr><h4>" + "Magnitude Level: " + magnitude + 
+        "<br>" + new Date(features[i].properties.time) + "<br>" + 
+        "Location: [" + coordinates[1] + ", " + coordinates[1] + "]" + "</h4>");}
 
     // Create legend for map
     var legend = L.control({position: "bottomright"});
     legend.onAdd = function(){
         var div =  L.DomUtil.create("div", "info legend");
         var depth = ["<10", "10-30", "30-50", "50-70", "70-90", ">90"];
-        var colors = ["#99ff66", "#ffff66", "#ffc266", "#ff9900", "#ff9999", "#FF4d4d"]
+        var colors = ["#99ff66", "#ffff66", "#ffc266", "#ff9900", "#ff3333", "#cc0000"]
         var labels = [];
-        // Insert div and fix html for legend
-        div.innerHTML +=
-            "<div class=\"labels\">" +
-            "<div class=\"min\">" + depth[0] + "</div>" +
-            "<div class=\"max\">" + depth[depth.length - 1] + "</div>" + "</div>";
+        // Insert legend to html
+        div.innerHTML 
+            labels.push(`<p style="background-color: #e6ffff"><b> EARTHQUAKE DEPTH (km) </b></p>`);
         depth.forEach(function(depth, i) {
-            labels.push("<li style=\"background-color: " + colors[i] + "\"></li>");
+            labels.push(`<ul style="background-color: ${colors[i]}">${depth} km </ul>`);
       });
       div.innerHTML += "<ul>" + labels.join("") + "</ul>";
       return div;
