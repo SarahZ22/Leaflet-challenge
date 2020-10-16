@@ -114,7 +114,7 @@ d3.json(quakeLink, function(data){
       legend.addTo(myMap);
 });
 
-// Request geojson data for tectonic plates 
+// Request geojson data for tectonic plates and add to map
 d3.json(tectonicLink, function(data){
     L.geoJSON(data, {
         style: {
